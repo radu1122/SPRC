@@ -28,6 +28,7 @@ bool_t xdr_sum_data();
 struct access_token_req_struct {
 	char *client_id;
 	char *auth_token;
+	int refresh_token_needed;
 };
 typedef struct access_token_req_struct access_token_req_struct;
 #ifdef __cplusplus
@@ -42,7 +43,7 @@ bool_t xdr_access_token_req_struct();
 struct access_token_res_struct {
 	char *access_token;
 	char *refresh_token;
-	int expires_in;
+	int valability;
 	char *error;
 };
 typedef struct access_token_res_struct access_token_res_struct;

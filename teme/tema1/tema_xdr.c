@@ -24,6 +24,8 @@ xdr_access_token_req_struct(XDR *xdrs, access_token_req_struct *objp)
 		return (FALSE);
 	if (!xdr_string(xdrs, &objp->auth_token, ~0))
 		return (FALSE);
+	if (!xdr_int(xdrs, &objp->refresh_token_needed))
+		return (FALSE);
 	return (TRUE);
 }
 
@@ -35,7 +37,7 @@ xdr_access_token_res_struct(XDR *xdrs, access_token_res_struct *objp)
 		return (FALSE);
 	if (!xdr_string(xdrs, &objp->refresh_token, ~0))
 		return (FALSE);
-	if (!xdr_int(xdrs, &objp->expires_in))
+	if (!xdr_int(xdrs, &objp->valability))
 		return (FALSE);
 	if (!xdr_string(xdrs, &objp->error, ~0))
 		return (FALSE);

@@ -14,6 +14,14 @@ struct auth_token {
 	int status; // 0 - ok, 1 - used
 };
 
+struct access_token {
+	char *client_id;
+	char *token;
+	char *refresh_token;
+	int status; // 0 - ok, 1 - inactiv
+	int valability; // 0 - not valid, != 0 - valid
+};
+
 int number_of_clients = 0;
 char clients[1024][100];
 
@@ -27,6 +35,9 @@ int valability;
 
 int auth_tokens_count = 0;
 struct auth_token auth_tokens[1024];
+
+int access_tokens_count = 0;
+struct access_token access_tokens[1024];
 
 
 
@@ -58,6 +69,55 @@ char **req_auth_1_svc(char **argp, struct svc_req *rqstp) {
 	auth_tokens_count++;
 
 	return token;
+}
+
+struct access_token_res_struct * req_access_token_1_svc(struct access_token_req_struct *argp, struct svc_req *rqstp) {
+	struct access_token_res_struct result;
+	char *client_id = argp->client_id;
+	char *auth_token = argp->auth_token;
+	int refresh_token_needed = argp->refresh_token_needed;
+	printf("BEGIN %s AUTHZ\n", client_id);
+	printf("\tRequestToken = %s\n", auth_token);
+
+	int i;
+	for (i = 0; i < auth_tokens_count; i++) {
+		if (strcmp(auth_tokens[i].client_id, client_id) == 0 && strcmp(auth_tokens[i].token, auth_token) == 0 && auth_tokens[i].status == 0) {
+			auth_tokens[i].status = 1;
+			char *access_token = generate_access_token(auth_token);
+			char *refresh_token = generate_access_token(access_token);
+			result.access_token = access_token;
+			result.valability = valability;
+			result.error = NULL;
+
+			access_tokens[access_tokens_count].client_id = client_id;
+			access_tokens[access_tokens_count].token = access_token;
+			access_tokens[access_tokens_count].status = 0;
+			access_tokens[access_tokens_count].valability = valability;
+
+			printf("\tAccess Token = %s\n", access_token);
+
+			if (refresh_token_needed == 1) {
+				result.refresh_token = refresh_token;
+				access_tokens[access_tokens_count].refresh_token = refresh_token;
+				printf("\tRefresh Token = %s\n", refresh_token);
+			} else {
+				result.refresh_token = NULL;
+				access_tokens[access_tokens_count].refresh_token = NULL;
+			}
+
+			access_tokens_count++;
+
+
+			
+			return &result;
+		}
+	}
+
+	result.access_token = NULL;
+	result.refresh_token = NULL;
+	result.valability = 0;
+	result.error = "REQUEST_DENIED";
+	return &result;
 }
 
 int populate_db(char* argv[]) {

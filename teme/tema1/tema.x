@@ -6,13 +6,14 @@ struct sum_data {
 struct access_token_req_struct {
 	string client_id<>;
 	string auth_token<>;
+	int refresh_token_needed;
 };
 
 
 struct access_token_res_struct {
 	string access_token<>;
 	string refresh_token<>;
-	int expires_in;
+	int valability;
 	string error<>;
 };
 
