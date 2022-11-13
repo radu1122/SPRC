@@ -48,9 +48,11 @@ bool_t
 xdr_validate_action_req_struct(XDR *xdrs, validate_action_req_struct *objp)
 {
 
+	if (!xdr_string(xdrs, &objp->client_id, ~0))
+		return (FALSE);
 	if (!xdr_string(xdrs, &objp->access_token, ~0))
 		return (FALSE);
-	if (!xdr_string(xdrs, &objp->opeation_type, ~0))
+	if (!xdr_string(xdrs, &objp->operation_type, ~0))
 		return (FALSE);
 	if (!xdr_string(xdrs, &objp->resource, ~0))
 		return (FALSE);

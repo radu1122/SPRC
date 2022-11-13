@@ -57,8 +57,9 @@ bool_t xdr_access_token_res_struct();
 
 
 struct validate_action_req_struct {
+	char *client_id;
 	char *access_token;
-	char *opeation_type;
+	char *operation_type;
 	char *resource;
 };
 typedef struct validate_action_req_struct validate_action_req_struct;

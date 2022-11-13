@@ -29,6 +29,7 @@ int number_of_resources = 0;
 char resources[1024][100];
 
 int number_of_approvals = 0;
+int current_approval = 0;
 char approvals[1024][100];
 
 int valability;
@@ -41,12 +42,37 @@ struct access_token access_tokens[1024];
 
 
 
+char **split_approvals(char *approvals) {
+	char *token;
+	char **tokens = malloc(100 * sizeof(char *));
+	int i = 0;
+
+	token = strtok(approvals, ",");
+	while (token != NULL) {
+		tokens[i] = token;
+		token = strtok(NULL, ",");
+		i++;
+	}
+
+	return tokens;
+}
+
 
 
 int check_client(char *client) {
 	int i;
 	for (i = 0; i < number_of_clients; i++) {
 		if (strcmp(clients[i], client) == 0) {
+			return 1;
+		}
+	}
+	return 0;
+}
+
+int check_resource(char *resource) {
+	int i;
+	for (i = 0; i < number_of_resources; i++) {
+		if (strcmp(resources[i], resource) == 0) {
 			return 1;
 		}
 	}
@@ -117,6 +143,91 @@ struct access_token_res_struct * req_access_token_1_svc(struct access_token_req_
 	result.refresh_token = NULL;
 	result.valability = 0;
 	result.error = "REQUEST_DENIED";
+	return &result;
+}
+
+char ** req_validate_action_1_svc(struct validate_action_req_struct *argp, struct svc_req *rqstp) {
+	char *result;
+	char *client_id = argp->client_id;
+	char *access_token = argp->access_token;
+	char *operation_type = argp->operation_type;
+	char *resource = argp->resource;
+
+	int i;
+	for (i = 0; i < access_tokens_count; i++) {
+		if (strcmp(access_tokens[i].client_id, client_id) == 0 && strcmp(access_tokens[i].token, access_token) == 0 && access_tokens[i].status == 0) {
+			if (access_tokens[i].valability <= 0 && access_tokens[i].refresh_token != NULL) {
+				access_tokens[i].valability--;
+				result = "TOKEN_EXPIRED";
+				printf("DENY (%s, %s, %s, %d)", operation_type, resource, access_token, access_tokens[i].valability);
+				return &result;
+			} else {
+				// TODO refresh token
+				access_tokens[i].valability = valability;
+				access_tokens[i].status = 0;
+				access_tokens[i].token = generate_access_token(access_token[i].refresh_token);
+				acces_tokens[i].refresh_token = generate_access_token(access_tokens[i].token);
+				// print BEGIN Cli e n t 1 AUTHZ REFRESH
+				printf("BEGIN %s AUTHZ REFRESH\n", client_id);
+				printf("\t Access Token = %s\n", access_tokens[i].token);
+				printf("\tRefresh Token = %s\n", access_tokens[i].refresh_token);
+			}
+
+			if (check_resource(resource) == 0) {
+				printf("DENY (%s, %s, %s, %d)", operation_type, resource, access_token, access_tokens[i].valability);
+				result = "RESOURCE_NOT_FOUND";
+				return &result;
+			}
+
+			char *client_id = access_tokens[i].client_id;
+
+
+			if (strcmp(approvals[current_approval], "*,-") == 0) {
+				printf("DENY (%s, %s, %s, %d)", operation_type, resource, access_token, access_tokens[i].valability);
+				result = "OPERATION_NOT_PERMITTED";
+				return &result;
+			}
+
+			// split approvals by ,
+			char **tokens = split_approvals(approvals[current_approval]);
+			int tokens_length = strlen(tokens);
+
+			int op_permitted = 0;			
+			for (int j = 0; j < tokens_length; j += 2) {
+				if(strcmp(tokens[j], resource) == 0) {
+					if (strcmp(tokens[j+1], operation_type) == 0) {
+						op_permitted = 1;
+						break;
+					}
+				}
+			}
+
+			if (op_permitted == 0) {
+				result = "OPERATION_NOT_PERMITTED";
+				printf("DENY (%s, %s, %s, %d)", operation_type, resource, access_token, access_tokens[i].valability);
+				free(tokens);
+				return &result;
+			}
+
+			free(tokens);
+
+			if (access_tokens[i].refresh_token != NULL) {
+				access_tokens[i].valability--;
+			}
+
+			if (access_tokens[i].valability == 0) {
+				access_tokens[i].status = 1;
+			}
+			printf("PERMIT (%s, %s, %s, %d)", operation_type, resource, access_token, access_tokens[i].valability);
+
+			result = "PERMISSION_GRANTED";
+			return &result;
+		}
+	}
+
+	printf("DENY (%s, %s, %s, %d)", operation_type, resource, access_token, access_tokens[i].valability);
+
+	result = "PERMISSION_DENIED";
 	return &result;
 }
 

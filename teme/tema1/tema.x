@@ -18,8 +18,9 @@ struct access_token_res_struct {
 };
 
 struct validate_action_req_struct {
+	string client_id<>;
 	string access_token<>;
-	string opeation_type<>;
+	string operation_type<>;
 	string resource<>;
 };
 
