@@ -231,8 +231,13 @@ char ** req_validate_action_1_svc(struct validate_action_req_struct *argp, struc
 	return &result;
 }
 
-int populate_db(char* argv[]) {
+int populate_db(int argc, char* argv[]) {
 	// populate db
+
+	if (argc != 5) {
+		fprintf(stderr, "./server <fisier clienti> <fisier resurse> <fisier aprobari> <valabilitate jetoane>\n");
+		return -1;
+	}
 
 	// read from file argv[1]
 	FILE* clientsFile = fopen(argv[1], "r");
