@@ -6,55 +6,59 @@
 #include "tema.h"
 
 bool_t
-xdr_sum_data(XDR *xdrs, sum_data *objp)
+xdr_sum_data (XDR *xdrs, sum_data *objp)
 {
+	register int32_t *buf;
 
-	if (!xdr_int(xdrs, &objp->x))
-		return (FALSE);
-	if (!xdr_int(xdrs, &objp->y))
-		return (FALSE);
-	return (TRUE);
+	 if (!xdr_int (xdrs, &objp->x))
+		 return FALSE;
+	 if (!xdr_int (xdrs, &objp->y))
+		 return FALSE;
+	return TRUE;
 }
 
 bool_t
-xdr_access_token_req_struct(XDR *xdrs, access_token_req_struct *objp)
+xdr_access_token_req_struct (XDR *xdrs, access_token_req_struct *objp)
 {
+	register int32_t *buf;
 
-	if (!xdr_string(xdrs, &objp->client_id, ~0))
-		return (FALSE);
-	if (!xdr_string(xdrs, &objp->auth_token, ~0))
-		return (FALSE);
-	if (!xdr_int(xdrs, &objp->refresh_token_needed))
-		return (FALSE);
-	return (TRUE);
+	 if (!xdr_string (xdrs, &objp->client_id, ~0))
+		 return FALSE;
+	 if (!xdr_string (xdrs, &objp->auth_token, ~0))
+		 return FALSE;
+	 if (!xdr_int (xdrs, &objp->refresh_token_needed))
+		 return FALSE;
+	return TRUE;
 }
 
 bool_t
-xdr_access_token_res_struct(XDR *xdrs, access_token_res_struct *objp)
+xdr_access_token_res_struct (XDR *xdrs, access_token_res_struct *objp)
 {
+	register int32_t *buf;
 
-	if (!xdr_string(xdrs, &objp->access_token, ~0))
-		return (FALSE);
-	if (!xdr_string(xdrs, &objp->refresh_token, ~0))
-		return (FALSE);
-	if (!xdr_int(xdrs, &objp->valability))
-		return (FALSE);
-	if (!xdr_string(xdrs, &objp->error, ~0))
-		return (FALSE);
-	return (TRUE);
+	 if (!xdr_string (xdrs, &objp->access_token, ~0))
+		 return FALSE;
+	 if (!xdr_string (xdrs, &objp->refresh_token, ~0))
+		 return FALSE;
+	 if (!xdr_int (xdrs, &objp->valability))
+		 return FALSE;
+	 if (!xdr_string (xdrs, &objp->error, ~0))
+		 return FALSE;
+	return TRUE;
 }
 
 bool_t
-xdr_validate_action_req_struct(XDR *xdrs, validate_action_req_struct *objp)
+xdr_validate_action_req_struct (XDR *xdrs, validate_action_req_struct *objp)
 {
+	register int32_t *buf;
 
-	if (!xdr_string(xdrs, &objp->client_id, ~0))
-		return (FALSE);
-	if (!xdr_string(xdrs, &objp->access_token, ~0))
-		return (FALSE);
-	if (!xdr_string(xdrs, &objp->operation_type, ~0))
-		return (FALSE);
-	if (!xdr_string(xdrs, &objp->resource, ~0))
-		return (FALSE);
-	return (TRUE);
+	 if (!xdr_string (xdrs, &objp->client_id, ~0))
+		 return FALSE;
+	 if (!xdr_string (xdrs, &objp->access_token, ~0))
+		 return FALSE;
+	 if (!xdr_string (xdrs, &objp->operation_type, ~0))
+		 return FALSE;
+	 if (!xdr_string (xdrs, &objp->resource, ~0))
+		 return FALSE;
+	return TRUE;
 }

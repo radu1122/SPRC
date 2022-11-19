@@ -165,8 +165,9 @@ char ** req_validate_action_1_svc(struct validate_action_req_struct *argp, struc
 				// TODO refresh token
 				access_tokens[i].valability = valability;
 				access_tokens[i].status = 0;
-				access_tokens[i].token = generate_access_token(access_token[i].refresh_token);
-				acces_tokens[i].refresh_token = generate_access_token(access_tokens[i].token);
+				access_tokens
+				[i].token = generate_access_token(access_tokens[i].refresh_token);
+				access_tokens[i].refresh_token = generate_access_token(access_tokens[i].token);
 				// print BEGIN Cli e n t 1 AUTHZ REFRESH
 				printf("BEGIN %s AUTHZ REFRESH\n", client_id);
 				printf("\t Access Token = %s\n", access_tokens[i].token);

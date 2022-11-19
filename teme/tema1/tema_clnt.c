@@ -3,7 +3,7 @@
  * It was generated using rpcgen.
  */
 
-#include <memory.h>
+#include <memory.h> /* for memset */
 #include "tema.h"
 
 /* Default timeout can be changed using clnt_control() */
@@ -15,8 +15,12 @@ req_auth_1(char **argp, CLIENT *clnt)
 	static char *clnt_res;
 
 	memset((char *)&clnt_res, 0, sizeof(clnt_res));
-	if (clnt_call(clnt, req_auth, xdr_wrapstring, argp, xdr_wrapstring, &clnt_res, TIMEOUT) != RPC_SUCCESS)
+	if (clnt_call (clnt, req_auth,
+		(xdrproc_t) xdr_wrapstring, (caddr_t) argp,
+		(xdrproc_t) xdr_wrapstring, (caddr_t) &clnt_res,
+		TIMEOUT) != RPC_SUCCESS) {
 		return (NULL);
+	}
 	return (&clnt_res);
 }
 
@@ -26,8 +30,12 @@ req_access_token_1(struct access_token_req_struct *argp, CLIENT *clnt)
 	static struct access_token_res_struct clnt_res;
 
 	memset((char *)&clnt_res, 0, sizeof(clnt_res));
-	if (clnt_call(clnt, req_access_token, xdr_access_token_req_struct, argp, xdr_access_token_res_struct, &clnt_res, TIMEOUT) != RPC_SUCCESS)
+	if (clnt_call (clnt, req_access_token,
+		(xdrproc_t) xdr_access_token_req_struct, (caddr_t) argp,
+		(xdrproc_t) xdr_access_token_res_struct, (caddr_t) &clnt_res,
+		TIMEOUT) != RPC_SUCCESS) {
 		return (NULL);
+	}
 	return (&clnt_res);
 }
 
@@ -37,7 +45,11 @@ req_validate_action_1(struct validate_action_req_struct *argp, CLIENT *clnt)
 	static char *clnt_res;
 
 	memset((char *)&clnt_res, 0, sizeof(clnt_res));
-	if (clnt_call(clnt, req_validate_action, xdr_validate_action_req_struct, argp, xdr_wrapstring, &clnt_res, TIMEOUT) != RPC_SUCCESS)
+	if (clnt_call (clnt, req_validate_action,
+		(xdrproc_t) xdr_validate_action_req_struct, (caddr_t) argp,
+		(xdrproc_t) xdr_wrapstring, (caddr_t) &clnt_res,
+		TIMEOUT) != RPC_SUCCESS) {
 		return (NULL);
+	}
 	return (&clnt_res);
 }

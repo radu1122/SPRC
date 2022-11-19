@@ -66,6 +66,7 @@ int main(int argc, char const *argv[])
 				}
 			}
 		}
+	}
 
 	// data.x = atoi(argv[2]);
 	// data.y = atoi(argv[3]);
@@ -77,8 +78,7 @@ int main(int argc, char const *argv[])
 	// }
 	// printf("%d + %d = %d\n", data.x, data.y, *sum);
 
-	// clnt_destroy(handle);
-	// xdr_free((xdrproc_t)xdr_int, (char *)sum);
+	clnt_destroy(handle);
 
 	return 0;
 }

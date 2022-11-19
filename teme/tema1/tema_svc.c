@@ -4,54 +4,20 @@
  */
 
 #include "tema.h"
-#include <sys/ioctl.h>
-#include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <rpc/pmap_clnt.h>
 #include <string.h>
-#include <netdb.h>
-#include <signal.h>
-#include <sys/ttycom.h>
-#ifdef __cplusplus
-#include <sysent.h>
-#endif /* __cplusplus */
 #include <memory.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
-#include <syslog.h>
 
-#ifdef __STDC__
+#ifndef SIG_PF
 #define SIG_PF void(*)(int)
 #endif
 
-#ifdef DEBUG
-#define RPC_SVC_FG
-#endif
-
-#define _RPCSVC_CLOSEDOWN 120
-extern int _rpcpmstart;		/* Started by a port monitor ? */
-extern int _rpcfdtype;		/* Whether Stream or Datagram ? */
-extern int _rpcsvcdirty;	/* Still serving ? */
-
-static
-void _msgout(char* msg)
-{
-#ifdef RPC_SVC_FG
-	if (_rpcpmstart)
-		syslog(LOG_ERR, "%s", msg);
-	else
-		(void) fprintf(stderr, "%s\n", msg);
-#else
-	syslog(LOG_ERR, "%s", msg);
-#endif
-}
-
-void auth_prog_1(struct svc_req *rqstp, SVCXPRT *transp);
-
 void
-auth_prog_1(struct svc_req *rqstp, SVCXPRT *transp)
+auth_prog_1(struct svc_req *rqstp, register SVCXPRT *transp)
 {
 	union {
 		char *req_auth_1_arg;
@@ -59,53 +25,48 @@ auth_prog_1(struct svc_req *rqstp, SVCXPRT *transp)
 		struct validate_action_req_struct req_validate_action_1_arg;
 	} argument;
 	char *result;
-	xdrproc_t xdr_argument, xdr_result;
+	xdrproc_t _xdr_argument, _xdr_result;
 	char *(*local)(char *, struct svc_req *);
 
-	_rpcsvcdirty = 1;
 	switch (rqstp->rq_proc) {
 	case NULLPROC:
-		(void) svc_sendreply(transp, (xdrproc_t) xdr_void, (char *)NULL);
-		_rpcsvcdirty = 0;
+		(void) svc_sendreply (transp, (xdrproc_t) xdr_void, (char *)NULL);
 		return;
 
 	case req_auth:
-		xdr_argument = (xdrproc_t) xdr_wrapstring;
-		xdr_result = (xdrproc_t) xdr_wrapstring;
+		_xdr_argument = (xdrproc_t) xdr_wrapstring;
+		_xdr_result = (xdrproc_t) xdr_wrapstring;
 		local = (char *(*)(char *, struct svc_req *)) req_auth_1_svc;
 		break;
 
 	case req_access_token:
-		xdr_argument = (xdrproc_t) xdr_access_token_req_struct;
-		xdr_result = (xdrproc_t) xdr_access_token_res_struct;
+		_xdr_argument = (xdrproc_t) xdr_access_token_req_struct;
+		_xdr_result = (xdrproc_t) xdr_access_token_res_struct;
 		local = (char *(*)(char *, struct svc_req *)) req_access_token_1_svc;
 		break;
 
 	case req_validate_action:
-		xdr_argument = (xdrproc_t) xdr_validate_action_req_struct;
-		xdr_result = (xdrproc_t) xdr_wrapstring;
+		_xdr_argument = (xdrproc_t) xdr_validate_action_req_struct;
+		_xdr_result = (xdrproc_t) xdr_wrapstring;
 		local = (char *(*)(char *, struct svc_req *)) req_validate_action_1_svc;
 		break;
 
 	default:
-		svcerr_noproc(transp);
-		_rpcsvcdirty = 0;
+		svcerr_noproc (transp);
 		return;
 	}
-	(void) memset((char *)&argument, 0, sizeof (argument));
-	if (!svc_getargs(transp, xdr_argument, (caddr_t) &argument)) {
-		svcerr_decode(transp);
-		_rpcsvcdirty = 0;
+	memset ((char *)&argument, 0, sizeof (argument));
+	if (!svc_getargs (transp, (xdrproc_t) _xdr_argument, (caddr_t) &argument)) {
+		svcerr_decode (transp);
 		return;
 	}
 	result = (*local)((char *)&argument, rqstp);
-	if (result != NULL && !svc_sendreply(transp, (xdrproc_t) xdr_result, result)) {
-		svcerr_systemerr(transp);
+	if (result != NULL && !svc_sendreply(transp, (xdrproc_t) _xdr_result, result)) {
+		svcerr_systemerr (transp);
 	}
-	if (!svc_freeargs(transp, xdr_argument, (caddr_t) &argument)) {
-		_msgout("unable to free arguments");
-		exit(1);
+	if (!svc_freeargs (transp, (xdrproc_t) _xdr_argument, (caddr_t) &argument)) {
+		fprintf (stderr, "%s", "unable to free arguments");
+		exit (1);
 	}
-	_rpcsvcdirty = 0;
 	return;
 }

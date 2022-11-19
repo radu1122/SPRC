@@ -3,7 +3,7 @@ CC = gcc
 CFLAGS += -g -I/usr/include/tirpc
 LDLIBS += -lnsl -ltirpc
 PROGRAM = tema
-SRC_SERVER = $(PROGRAM)_svc.c $(PROGRAM)_xdr.c
+SRC_SERVER = tema_svc.c tema_xdr.c
 SRC_CLIENT = $(PROGRAM)_clnt.c $(PROGRAM)_xdr.c
 
 .PHONY: build clean
