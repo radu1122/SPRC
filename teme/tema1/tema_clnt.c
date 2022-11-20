@@ -9,15 +9,30 @@
 /* Default timeout can be changed using clnt_control() */
 static struct timeval TIMEOUT = { 25, 0 };
 
-char **
+struct req_auth_resp *
 req_auth_1(char **argp, CLIENT *clnt)
 {
-	static char *clnt_res;
+	static struct req_auth_resp clnt_res;
 
 	memset((char *)&clnt_res, 0, sizeof(clnt_res));
 	if (clnt_call (clnt, req_auth,
 		(xdrproc_t) xdr_wrapstring, (caddr_t) argp,
-		(xdrproc_t) xdr_wrapstring, (caddr_t) &clnt_res,
+		(xdrproc_t) xdr_req_auth_resp, (caddr_t) &clnt_res,
+		TIMEOUT) != RPC_SUCCESS) {
+		return (NULL);
+	}
+	return (&clnt_res);
+}
+
+struct approve_auth_resp *
+req_approve_auth_1(char **argp, CLIENT *clnt)
+{
+	static struct approve_auth_resp clnt_res;
+
+	memset((char *)&clnt_res, 0, sizeof(clnt_res));
+	if (clnt_call (clnt, req_approve_auth,
+		(xdrproc_t) xdr_wrapstring, (caddr_t) argp,
+		(xdrproc_t) xdr_approve_auth_resp, (caddr_t) &clnt_res,
 		TIMEOUT) != RPC_SUCCESS) {
 		return (NULL);
 	}
@@ -39,15 +54,30 @@ req_access_token_1(struct access_token_req_struct *argp, CLIENT *clnt)
 	return (&clnt_res);
 }
 
-char **
+struct req_refresh_token_resp *
+req_refresh_token_1(char **argp, CLIENT *clnt)
+{
+	static struct req_refresh_token_resp clnt_res;
+
+	memset((char *)&clnt_res, 0, sizeof(clnt_res));
+	if (clnt_call (clnt, req_refresh_token,
+		(xdrproc_t) xdr_wrapstring, (caddr_t) argp,
+		(xdrproc_t) xdr_req_refresh_token_resp, (caddr_t) &clnt_res,
+		TIMEOUT) != RPC_SUCCESS) {
+		return (NULL);
+	}
+	return (&clnt_res);
+}
+
+struct validate_action_res_struct *
 req_validate_action_1(struct validate_action_req_struct *argp, CLIENT *clnt)
 {
-	static char *clnt_res;
+	static struct validate_action_res_struct clnt_res;
 
 	memset((char *)&clnt_res, 0, sizeof(clnt_res));
 	if (clnt_call (clnt, req_validate_action,
 		(xdrproc_t) xdr_validate_action_req_struct, (caddr_t) argp,
-		(xdrproc_t) xdr_wrapstring, (caddr_t) &clnt_res,
+		(xdrproc_t) xdr_validate_action_res_struct, (caddr_t) &clnt_res,
 		TIMEOUT) != RPC_SUCCESS) {
 		return (NULL);
 	}

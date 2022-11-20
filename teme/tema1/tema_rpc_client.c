@@ -6,18 +6,41 @@
 #include "tema.h"
 #define USER_NOT_FOUND "USER_NOT_FOUND"
 
-#define PROTOCOL "tcp"
+#define PROTOCOL "udp"
+
+struct access_token_struct {
+	char *client_id;
+	char *access_token;
+	char *refresh_token;
+	int valability;
+};
+
+int access_tokens_count = 0;
+struct access_token_struct access_tokens[1024];
+
+char **split_string(char *string) {
+	char **result = malloc(1024 * sizeof(char *));
+	char *token = strtok(string, ",");
+	int i = 0;
+	while (token != NULL) {
+		result[i] = token;
+		token = strtok(NULL, ",");
+		i++;
+	}
+	result[i] = NULL;
+	return result;
+}
 
 int main(int argc, char const *argv[])
 {
 	CLIENT *handle;
 
 	if (argc != 2) {
-		fprintf(stderr, "./client <fisier operatii>");
+		fprintf(stderr, "./client <fisier operatii>\n");
 		return -1;
 	}
 
-	handle = clnt_create(argv[1], AUTH_PROG, AUTH_VERS, PROTOCOL);
+	handle = clnt_create("localhost", AUTH_PROG, AUTH_VERS, PROTOCOL);
 	if (!handle) {
 		perror("Failed to create client handle");
 		clnt_pcreateerror(argv[0]);
@@ -39,33 +62,89 @@ int main(int argc, char const *argv[])
 
 	// while there are lines to read
 	while ((read = getline(&line, &len, operations_file)) != -1) {
-		line[strlen(line) - 1] = '\0';
+
+		// line[strlen(line) - 1] = '\0';
+
+		// printf("Line: %s", line);m
 		
 		// split into tokens
-		char *token = strtok(line, " ");
-		char *tokens[3];
-		int i = 0;
-		while (token != NULL) {
-			tokens[i] = token;
-			token = strtok(NULL, " ");
-			i++;
+		char ** tokens = split_string(line);
+		// printf("Tokens: %s %s %s\n", tokens[0], tokens[1], tokens[2]);
+
+		if (tokens[2][strlen(tokens[2]) - 1] == '\n') {
+			tokens[2][strlen(tokens[2]) - 1] = '\0';
 		}
 
-		if (strcmp(tokens[1], "REQUEST")) {
-			if (strcmp(tokens[2], "0")) {
-				char *result = req_auth_1(&tokens[0], handle);
-				if (strcmp(result, USER_NOT_FOUND)) {
-					printf("USER_NOT_FOUND\n");
-				} else {
-					struct access_token_req_struct *req = malloc(sizeof(struct access_token_req_struct));
-					req->client_id = tokens[0];
-					req->auth_token = result;
-					req->refresh_token_needed = 0;
 
+		if (strcmp(tokens[1], "REQUEST") == 0) {
+			struct req_auth_resp * result = req_auth_1(&tokens[0], handle);
+			struct access_token_req_struct *req = malloc(sizeof(struct access_token_req_struct));
+			req->client_id = tokens[0];
+			req->auth_token = result->token;
+			if (strcmp(tokens[2], "0") == 0) {
+				req->refresh_token_needed = 0;
+			} else {
+				req->refresh_token_needed = 1;
+			}
+			if (strcmp(result->token, USER_NOT_FOUND) == 0) {
+				printf("USER_NOT_FOUND\n");
+			} else {
+
+				struct approve_auth_resp *approve_result = req_approve_auth_1(&result->token, handle);
+
+				// if (approve_result->permission == 1) {
+					req->permission = approve_result->permission;
 					struct access_token_res_struct *res = req_access_token_1(req, handle);
+
+					if (strcmp(res->error, "REQUEST_DENIED") == 0) {
+						printf("REQUEST_DENIED\n");
+					} else {
+						access_tokens[access_tokens_count].client_id = tokens[0];
+						access_tokens[access_tokens_count].access_token = res->access_token;
+						access_tokens[access_tokens_count].refresh_token = res->refresh_token;
+						access_tokens[access_tokens_count].valability = res->valability;
+						printf("%s -> %s\n", result->token, res->access_token);
+					}
+				// } else {
+				// 	printf("Permission denied\n");
+				// }
+
+				
+			}
+			free(req);
+		} else {
+			// get access token of client tokens[0]
+			char *access_token = NULL;
+			char *refresh_token = NULL;
+			for (int i = 0; i < access_tokens_count; i++) {
+				if (strcmp(access_tokens[i].client_id, tokens[0]) == 0) {
+					access_token = access_tokens[i].access_token;
+					refresh_token = access_tokens[i].refresh_token;
+					break;
 				}
 			}
+
+			// send req_validate_action_1
+			struct validate_action_req_struct *req = malloc(sizeof(struct validate_action_req_struct));
+			req->client_id = tokens[0];
+			req->access_token = access_token;
+			req->operation_type = tokens[1][0];
+			req->resource = tokens[2];
+
+			struct validate_action_res_struct * res = req_validate_action_1(req, handle);
+
+			if (strcmp(res->resp, "TOKEN_EXPIRED") == 0) {
+				struct req_refresh_token_resp *refresh_res = req_refresh_token_1(refresh_token, handle);
+				req->access_token = refresh_res->token;
+
+				res = req_validate_action_1(req, handle);
+			}
+
+			printf("%s\n", res->resp);
+			free(req);
 		}
+
+		free(tokens);
 	}
 
 	// data.x = atoi(argv[2]);

@@ -20,10 +20,21 @@ struct sum_data {
 };
 typedef struct sum_data sum_data;
 
+struct req_auth_resp {
+	char *token;
+};
+typedef struct req_auth_resp req_auth_resp;
+
+struct req_refresh_token_resp {
+	char *token;
+};
+typedef struct req_refresh_token_resp req_refresh_token_resp;
+
 struct access_token_req_struct {
 	char *client_id;
 	char *auth_token;
 	int refresh_token_needed;
+	int permission;
 };
 typedef struct access_token_req_struct access_token_req_struct;
 
@@ -43,31 +54,54 @@ struct validate_action_req_struct {
 };
 typedef struct validate_action_req_struct validate_action_req_struct;
 
+struct validate_action_res_struct {
+	char *resp;
+};
+typedef struct validate_action_res_struct validate_action_res_struct;
+
+struct approve_auth_resp {
+	char *token;
+	int permission;
+};
+typedef struct approve_auth_resp approve_auth_resp;
+
 #define AUTH_PROG 1
 #define AUTH_VERS 1
 
 #if defined(__STDC__) || defined(__cplusplus)
 #define req_auth 1
-extern  char ** req_auth_1(char **, CLIENT *);
-extern  char ** req_auth_1_svc(char **, struct svc_req *);
-#define req_access_token 2
+extern  struct req_auth_resp * req_auth_1(char **, CLIENT *);
+extern  struct req_auth_resp * req_auth_1_svc(char **, struct svc_req *);
+#define req_approve_auth 2
+extern  struct approve_auth_resp * req_approve_auth_1(char **, CLIENT *);
+extern  struct approve_auth_resp * req_approve_auth_1_svc(char **, struct svc_req *);
+#define req_access_token 3
 extern  struct access_token_res_struct * req_access_token_1(struct access_token_req_struct *, CLIENT *);
 extern  struct access_token_res_struct * req_access_token_1_svc(struct access_token_req_struct *, struct svc_req *);
-#define req_validate_action 3
-extern  char ** req_validate_action_1(struct validate_action_req_struct *, CLIENT *);
-extern  char ** req_validate_action_1_svc(struct validate_action_req_struct *, struct svc_req *);
+#define req_refresh_token 4
+extern  struct req_refresh_token_resp * req_refresh_token_1(char **, CLIENT *);
+extern  struct req_refresh_token_resp * req_refresh_token_1_svc(char **, struct svc_req *);
+#define req_validate_action 5
+extern  struct validate_action_res_struct * req_validate_action_1(struct validate_action_req_struct *, CLIENT *);
+extern  struct validate_action_res_struct * req_validate_action_1_svc(struct validate_action_req_struct *, struct svc_req *);
 extern int auth_prog_1_freeresult (SVCXPRT *, xdrproc_t, caddr_t);
 
 #else /* K&R C */
 #define req_auth 1
-extern  char ** req_auth_1();
-extern  char ** req_auth_1_svc();
-#define req_access_token 2
+extern  struct req_auth_resp * req_auth_1();
+extern  struct req_auth_resp * req_auth_1_svc();
+#define req_approve_auth 2
+extern  struct approve_auth_resp * req_approve_auth_1();
+extern  struct approve_auth_resp * req_approve_auth_1_svc();
+#define req_access_token 3
 extern  struct access_token_res_struct * req_access_token_1();
 extern  struct access_token_res_struct * req_access_token_1_svc();
-#define req_validate_action 3
-extern  char ** req_validate_action_1();
-extern  char ** req_validate_action_1_svc();
+#define req_refresh_token 4
+extern  struct req_refresh_token_resp * req_refresh_token_1();
+extern  struct req_refresh_token_resp * req_refresh_token_1_svc();
+#define req_validate_action 5
+extern  struct validate_action_res_struct * req_validate_action_1();
+extern  struct validate_action_res_struct * req_validate_action_1_svc();
 extern int auth_prog_1_freeresult ();
 #endif /* K&R C */
 
@@ -75,15 +109,23 @@ extern int auth_prog_1_freeresult ();
 
 #if defined(__STDC__) || defined(__cplusplus)
 extern  bool_t xdr_sum_data (XDR *, sum_data*);
+extern  bool_t xdr_req_auth_resp (XDR *, req_auth_resp*);
+extern  bool_t xdr_req_refresh_token_resp (XDR *, req_refresh_token_resp*);
 extern  bool_t xdr_access_token_req_struct (XDR *, access_token_req_struct*);
 extern  bool_t xdr_access_token_res_struct (XDR *, access_token_res_struct*);
 extern  bool_t xdr_validate_action_req_struct (XDR *, validate_action_req_struct*);
+extern  bool_t xdr_validate_action_res_struct (XDR *, validate_action_res_struct*);
+extern  bool_t xdr_approve_auth_resp (XDR *, approve_auth_resp*);
 
 #else /* K&R C */
 extern bool_t xdr_sum_data ();
+extern bool_t xdr_req_auth_resp ();
+extern bool_t xdr_req_refresh_token_resp ();
 extern bool_t xdr_access_token_req_struct ();
 extern bool_t xdr_access_token_res_struct ();
 extern bool_t xdr_validate_action_req_struct ();
+extern bool_t xdr_validate_action_res_struct ();
+extern bool_t xdr_approve_auth_resp ();
 
 #endif /* K&R C */
 

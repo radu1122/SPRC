@@ -1,23 +1,20 @@
-RPC = rpcgen
 CC = gcc
 CFLAGS += -g -I/usr/include/tirpc
 LDLIBS += -lnsl -ltirpc
 PROGRAM = tema
-SRC_SERVER = tema_svc.c tema_xdr.c
-SRC_CLIENT = $(PROGRAM)_clnt.c $(PROGRAM)_xdr.c
+SRC_SERVER = server.c tema_xdr.c
+SRC_CLIENT = tema_rpc_client.c tema_clnt.c tema_xdr.c 
 
 .PHONY: build clean
 
 build: server client
 
-server: $(SRC_SERVER) $(PROGRAM)_rpc_server.c
+server: $(SRC_SERVER)
 	$(CC) $(CFLAGS) $^ -o $@ $(LDFLAGS)
 
-client: $(SRC_CLIENT) $(PROGRAM)_rpc_client.c
+client: $(SRC_CLIENT)
 	$(CC) $(CFLAGS) $^ -o $@ $(LDFLAGS)
 
-# $(SRC_SERVER) $(SRC_CLIENT): $(PROGRAM).x
-# 	$(RPC) -C $^
 
 clean:
 	rm -f client server $(PROGRAM).h $(SRC_SERVER) $(SRC_CLIENT)

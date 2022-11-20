@@ -16,12 +16,14 @@
 #define SIG_PF void(*)(int)
 #endif
 
-void
+static void
 auth_prog_1(struct svc_req *rqstp, register SVCXPRT *transp)
 {
 	union {
 		char *req_auth_1_arg;
+		char *req_approve_auth_1_arg;
 		struct access_token_req_struct req_access_token_1_arg;
+		char *req_refresh_token_1_arg;
 		struct validate_action_req_struct req_validate_action_1_arg;
 	} argument;
 	char *result;
@@ -35,8 +37,14 @@ auth_prog_1(struct svc_req *rqstp, register SVCXPRT *transp)
 
 	case req_auth:
 		_xdr_argument = (xdrproc_t) xdr_wrapstring;
-		_xdr_result = (xdrproc_t) xdr_wrapstring;
+		_xdr_result = (xdrproc_t) xdr_req_auth_resp;
 		local = (char *(*)(char *, struct svc_req *)) req_auth_1_svc;
+		break;
+
+	case req_approve_auth:
+		_xdr_argument = (xdrproc_t) xdr_wrapstring;
+		_xdr_result = (xdrproc_t) xdr_approve_auth_resp;
+		local = (char *(*)(char *, struct svc_req *)) req_approve_auth_1_svc;
 		break;
 
 	case req_access_token:
@@ -45,9 +53,15 @@ auth_prog_1(struct svc_req *rqstp, register SVCXPRT *transp)
 		local = (char *(*)(char *, struct svc_req *)) req_access_token_1_svc;
 		break;
 
+	case req_refresh_token:
+		_xdr_argument = (xdrproc_t) xdr_wrapstring;
+		_xdr_result = (xdrproc_t) xdr_req_refresh_token_resp;
+		local = (char *(*)(char *, struct svc_req *)) req_refresh_token_1_svc;
+		break;
+
 	case req_validate_action:
 		_xdr_argument = (xdrproc_t) xdr_validate_action_req_struct;
-		_xdr_result = (xdrproc_t) xdr_wrapstring;
+		_xdr_result = (xdrproc_t) xdr_validate_action_res_struct;
 		local = (char *(*)(char *, struct svc_req *)) req_validate_action_1_svc;
 		break;
 
@@ -69,4 +83,37 @@ auth_prog_1(struct svc_req *rqstp, register SVCXPRT *transp)
 		exit (1);
 	}
 	return;
+}
+
+int
+main (int argc, char **argv)
+{
+	register SVCXPRT *transp;
+
+	pmap_unset (AUTH_PROG, AUTH_VERS);
+
+	transp = svcudp_create(RPC_ANYSOCK);
+	if (transp == NULL) {
+		fprintf (stderr, "%s", "cannot create udp service.");
+		exit(1);
+	}
+	if (!svc_register(transp, AUTH_PROG, AUTH_VERS, auth_prog_1, IPPROTO_UDP)) {
+		fprintf (stderr, "%s", "unable to register (AUTH_PROG, AUTH_VERS, udp).");
+		exit(1);
+	}
+
+	transp = svctcp_create(RPC_ANYSOCK, 0, 0);
+	if (transp == NULL) {
+		fprintf (stderr, "%s", "cannot create tcp service.");
+		exit(1);
+	}
+	if (!svc_register(transp, AUTH_PROG, AUTH_VERS, auth_prog_1, IPPROTO_TCP)) {
+		fprintf (stderr, "%s", "unable to register (AUTH_PROG, AUTH_VERS, tcp).");
+		exit(1);
+	}
+
+	svc_run ();
+	fprintf (stderr, "%s", "svc_run returned");
+	exit (1);
+	/* NOTREACHED */
 }
