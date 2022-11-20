@@ -27,6 +27,7 @@ typedef struct req_auth_resp req_auth_resp;
 
 struct req_refresh_token_resp {
 	char *token;
+	char *refresh_token;
 };
 typedef struct req_refresh_token_resp req_refresh_token_resp;
 
@@ -47,7 +48,6 @@ struct access_token_res_struct {
 typedef struct access_token_res_struct access_token_res_struct;
 
 struct validate_action_req_struct {
-	char *client_id;
 	char *access_token;
 	char *operation_type;
 	char *resource;

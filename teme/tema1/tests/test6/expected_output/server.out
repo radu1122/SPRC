@@ -1,0 +1,25 @@
+BEGIN 74xaLqdTDdHZ9ey AUTHZ
+  RequestToken = e49HDdxTqL7dZya
+  AccessToken = aZy4TLHxqded9D7
+BEGIN f80N46i82fdx61d AUTHZ
+  RequestToken = d10i68x86f4dfN2
+  AccessToken = 2Nx0id84f6d168f
+  RefreshToken = x8f02fd4iN661d8
+PERMIT (READ,Applications,2Nx0id84f6d168f,4)
+PERMIT (EXECUTE,Applications,2Nx0id84f6d168f,3)
+DENY (DELETE,Applications,2Nx0id84f6d168f,2)
+PERMIT (READ,Preferences,aZy4TLHxqded9D7,4)
+DENY (MODIFY,Preferences,aZy4TLHxqded9D7,3)
+DENY (MODIFY,UserData,aZy4TLHxqded9D7,2)
+BEGIN 74xaLqdTDdHZ9ey AUTHZ
+  RequestToken = q7ZLd9D4yxdHaeT
+PERMIT (INSERT,Files,2Nx0id84f6d168f,1)
+DENY (INSERT,Applications,2Nx0id84f6d168f,0)
+BEGIN f80N46i82fdx61d AUTHZ
+  RequestToken = fi4N018fx668dd2
+  AccessToken = x1628id60N8ffd4
+  RefreshToken = 48d2606dx1fNi8f
+PERMIT (INSERT,Applications,x1628id60N8ffd4,4)
+DENY (DELETE,Files,x1628id60N8ffd4,3)
+DENY (EXECUTE,Applications,x1628id60N8ffd4,2)
+PERMIT (DELETE,Applications,x1628id60N8ffd4,1)

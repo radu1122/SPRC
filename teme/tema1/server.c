@@ -51,11 +51,12 @@ struct access_token access_tokens[1024];
 char **split_approvals(char *approvals) {
 	char *token;
 	char **tokens = malloc(100 * sizeof(char *));
+	memset(tokens, 0, 100 * sizeof(char *));
 	int i = 0;
 
-	token = strtok(approvals, ",");
+	token = strtok(strdup(approvals), ",");
 	while (token != NULL) {
-		tokens[i] = token;
+		tokens[i] = strdup(token);
 		token = strtok(NULL, ",");
 		i++;
 	}
@@ -86,6 +87,8 @@ int check_resource(char *resource) {
 
 struct req_auth_resp * req_auth_1_svc(char **argp, struct svc_req *rqstp) {
 	char *client_id = *argp;
+	printf("BEGIN %s AUTHZ\n", client_id);
+
 
 	if (check_client(client_id) == 0) {
 		static struct req_auth_resp resp;
@@ -98,7 +101,7 @@ struct req_auth_resp * req_auth_1_svc(char **argp, struct svc_req *rqstp) {
 	auth_tokens[auth_tokens_count].client_id = client_id;
 	auth_tokens[auth_tokens_count].token = token;
 	auth_tokens[auth_tokens_count].status = 0;
-	auth_tokens[auth_tokens_count].permissionsStr = NULL;
+	auth_tokens[auth_tokens_count].permissionsStr = strdup("");
 	auth_tokens_count++;
 
 
@@ -110,9 +113,24 @@ struct req_auth_resp * req_auth_1_svc(char **argp, struct svc_req *rqstp) {
 struct approve_auth_resp * req_approve_auth_1_svc(char **argp, struct svc_req *rqstp) {
 	char *token = *argp;
 
+	// check if token exists in auth_tokens
+	int exists = 0;
+	for (int i = 0; i < auth_tokens_count; i++) {
+		if (strcmp(auth_tokens[i].token, token) == 0) {
+			exists = 1;
+			break;
+		}
+	}
 
-	int i;
-	char * approval = approvals[current_approval];
+	if (exists == 0) {
+		static struct approve_auth_resp resp;
+		resp.token = strdup("TOKEN_NOT_FOUND");
+		resp.permission = 0;
+		return &resp;
+	}
+
+
+	char * approval = strdup(approvals[current_approval]);
 	current_approval++;
 	if (strcmp(approval, "*,-") == 0) {
 		static struct approve_auth_resp resp;
@@ -123,9 +141,9 @@ struct approve_auth_resp * req_approve_auth_1_svc(char **argp, struct svc_req *r
 
 	// update auth_tokens permissions
 
-	for (i = 0; i < auth_tokens_count; i++) {
+	for (int i = 0; i < auth_tokens_count; i++) {
 		if (strcmp(auth_tokens[i].token, token) == 0) {
-			auth_tokens[i].permissionsStr = approval;
+			auth_tokens[i].permissionsStr = strdup(approval);
 			break;
 		}
 	}
@@ -142,18 +160,24 @@ struct req_refresh_token_resp * req_refresh_token_1_svc(char **argp, struct svc_
 	int i;
 	for (i = 0; i < access_tokens_count; i++) {
 		if (strcmp(access_tokens[i].refresh_token, refresh_token) == 0) {
+			printf("BEGIN %s AUTHZ REFRESH\n", access_tokens[i].client_id);
 			access_tokens[i].status = 0;
 			access_tokens[i].valability = valability;
 			access_tokens[i].token = generate_access_token(refresh_token);
 			access_tokens[i].refresh_token = generate_access_token(access_tokens[i].token);
 			static struct req_refresh_token_resp resp;
-			resp.token = access_tokens[i].token;
+			resp.token = strdup(access_tokens[i].token);
+			resp.refresh_token = strdup(access_tokens[i].refresh_token);
+			printf("  AccessToken = %s\n", access_tokens[i].token);
+			printf("  RefreshToken = %s\n", access_tokens[i].refresh_token);
 			return &resp;
 		}
 	}
 
 	static struct req_refresh_token_resp resp;
-	resp.token = "ERROR";
+	resp.token = strdup("ERROR");
+	resp.refresh_token = strdup("ERROR");
+
 	return &resp;
 }
 
@@ -163,11 +187,9 @@ struct access_token_res_struct * req_access_token_1_svc(struct access_token_req_
 	char *client_id = argp->client_id;
 	char *auth_token = argp->auth_token;
 	int refresh_token_needed = argp->refresh_token_needed;	
-	printf("BEGIN %s AUTHZ\n", client_id);
-	printf("\tRequestToken = %s\n", auth_token);
+	printf("  RequestToken = %s\n", auth_token);
 
 	if (argp->permission == 0) {
-		printf("Permission denied\n");
 		result.access_token = strdup("");
 		result.refresh_token = strdup("");
 		result.valability = 0;
@@ -179,23 +201,23 @@ struct access_token_res_struct * req_access_token_1_svc(struct access_token_req_
 		if (strcmp(auth_tokens[i].client_id, client_id) == 0 && strcmp(auth_tokens[i].token, auth_token) == 0 && auth_tokens[i].status == 0) {
 			auth_tokens[i].status = 1;
 			char *access_token = generate_access_token(auth_token);
-			char *refresh_token = generate_access_token(access_token);
 			result.access_token = access_token;
 			result.valability = valability;
 			result.error = strdup("");
 
-			access_tokens[access_tokens_count].client_id = client_id;
+			access_tokens[access_tokens_count].client_id = strdup(client_id);
 			access_tokens[access_tokens_count].token = access_token;
 			access_tokens[access_tokens_count].status = 0;
 			access_tokens[access_tokens_count].valability = valability;
 			access_tokens[access_tokens_count].permissionsStr = auth_tokens[i].permissionsStr;
 
-			printf("\tAccess Token = %s\n", access_token);
+			printf("  AccessToken = %s\n", access_token);
 
 			if (refresh_token_needed == 1) {
+				char *refresh_token = generate_access_token(access_token);
 				result.refresh_token = refresh_token;
 				access_tokens[access_tokens_count].refresh_token = refresh_token;
-				printf("\tRefresh Token = %s\n", refresh_token);
+				printf("  RefreshToken = %s\n", refresh_token);
 			} else {
 				result.refresh_token = strdup("");
 				access_tokens[access_tokens_count].refresh_token = strdup("");
@@ -218,51 +240,58 @@ struct access_token_res_struct * req_access_token_1_svc(struct access_token_req_
 
 struct validate_action_res_struct * req_validate_action_1_svc(struct validate_action_req_struct *argp, struct svc_req *rqstp) {
 	char *result;
-	char *client_id = argp->client_id;
 	char *access_token = argp->access_token;
 	char *operation_type = argp->operation_type;
 	char *resource = argp->resource;
 
-	int i;
-	for (i = 0; i < access_tokens_count; i++) {
-		if (strcmp(access_tokens[i].client_id, client_id) == 0 && strcmp(access_tokens[i].token, access_token) == 0 && access_tokens[i].status == 0) {
-			if (access_tokens[i].valability <= 0 && access_tokens[i].refresh_token != NULL) {
-				printf("DENY (%s, %s, %s, %d)", operation_type, resource, access_token, access_tokens[i].valability);
+	for (int i = access_tokens_count - 1; i >= 0; i--) {
+		if (strcmp(access_tokens[i].token, access_token) == 0 && access_tokens[i].status == 0) {
+			if (access_tokens[i].valability == 0) {
+				if (strcmp(access_tokens[i].refresh_token, "") == 0) {
+					printf("DENY (%s,%s,%s,%d)\n", operation_type, resource, "", access_tokens[i].valability);
+				}
 				static struct validate_action_res_struct resp;
 				resp.resp = "TOKEN_EXPIRED";
 				return &resp;
 			}
-			
-			if (access_tokens[i].refresh_token != NULL) {
-				access_tokens[i].valability--;
-			}
+			access_tokens[i].valability = access_tokens[i].valability - 1;
 
 			if (check_resource(resource) == 0) {
-				printf("DENY (%s, %s, %s, %d)", operation_type, resource, access_token, access_tokens[i].valability);
+				printf("DENY (%s,%s,%s,%d)\n", operation_type, resource, access_token, access_tokens[i].valability);
 				static struct validate_action_res_struct resp;
 				resp.resp = "RESOURCE_NOT_FOUND";
 				return &resp;
 			}
 
-			char *client_id = access_tokens[i].client_id;
+			char *approval = strdup(access_tokens[i].permissionsStr);
 
-			char *approval = access_tokens[i].permissionsStr;
 
 			if (strcmp(approval, "*,-") == 0) {
-				printf("DENY (%s, %s, %s, %d)", operation_type, resource, access_token, access_tokens[i].valability);
+				printf("DENY (%s,%s,%s,%d)\n", operation_type, resource, access_token, access_tokens[i].valability);
 				static struct validate_action_res_struct resp;
 				resp.resp = "OPERATION_NOT_PERMITTED";
 				return &resp;
 			}
 
+
 			// split approvals by ,
 			char **tokens = split_approvals(approval);
 			int tokens_length = strlen(tokens);
 
+
 			int op_permitted = 0;			
 			for (int j = 0; j < tokens_length; j += 2) {
+				if (tokens[j] == NULL || tokens[j + 1] == NULL) {
+					break;
+				}
+
 				if(strcmp(tokens[j], resource) == 0) {
-					if (strcmp(tokens[j+1], operation_type) == 0) {
+					// check if operation_type[0] exists in tokens[j+1]
+					if (operation_type[0] == 'E' && strchr(tokens[j+1], 'X') != NULL) {
+						op_permitted = 1;
+						break;
+					}
+					if (strchr(tokens[j+1], operation_type[0]) != NULL) {
 						op_permitted = 1;
 						break;
 					}
@@ -270,7 +299,7 @@ struct validate_action_res_struct * req_validate_action_1_svc(struct validate_ac
 			}
 
 			if (op_permitted == 0) {
-				printf("DENY (%s, %s, %s, %d)", operation_type, resource, access_token, access_tokens[i].valability);
+				printf("DENY (%s,%s,%s,%d)\n", operation_type, resource, access_token, access_tokens[i].valability);
 				free(tokens);
 				static struct validate_action_res_struct resp;
 				resp.resp = "OPERATION_NOT_PERMITTED";
@@ -280,10 +309,7 @@ struct validate_action_res_struct * req_validate_action_1_svc(struct validate_ac
 			free(tokens);
 
 
-			if (access_tokens[i].valability == 0) {
-				access_tokens[i].status = 1;
-			}
-			printf("PERMIT (%s, %s, %s, %d)", operation_type, resource, access_token, access_tokens[i].valability);
+			printf("PERMIT (%s,%s,%s,%d)\n", operation_type, resource, access_token, access_tokens[i].valability);
 
 			static struct validate_action_res_struct resp;
 			resp.resp = "PERMISSION_GRANTED";
@@ -291,7 +317,7 @@ struct validate_action_res_struct * req_validate_action_1_svc(struct validate_ac
 		}
 	}
 
-	printf("DENY (%s, %s, %s, %d)", operation_type, resource, access_token, access_tokens[i].valability);
+	printf("DENY (%s,%s,%s,%d)\n", operation_type, resource, "", 0);
 
 	static struct validate_action_res_struct resp;
 	resp.resp = "PERMISSION_DENIED";
@@ -333,7 +359,6 @@ int populate_db(int argc, char* argv[]) {
 			line[strlen(line) - 1] = '\0';
 		}
 		strcpy(clients[number_of_clients], line);
-		printf("Client %d: %s\n", number_of_clients, clients[number_of_clients]);
 		number_of_clients++;
 	}
 
@@ -359,7 +384,9 @@ int populate_db(int argc, char* argv[]) {
 	// read the rest of the lines and populate resources array
 	number_of_resources = 0;
 	while ((read = getline(&line, &len, resourcesFile)) != -1) {
-		line[strlen(line) - 1] = '\0';
+		if (line[strlen(line) - 1] == '\n') {
+			line[strlen(line) - 1] = '\0';
+		}
 		strcpy(resources[number_of_resources], line);
 		number_of_resources++;
 	}
@@ -375,14 +402,28 @@ int populate_db(int argc, char* argv[]) {
 
 	number_of_approvals = 0;
 	while ((read = getline(&line, &len, approvalsFile)) != -1) {
-		line[strlen(line) - 1] = '\0';
+		if (line[strlen(line) - 1] == '\n') {
+			line[strlen(line) - 1] = '\0';
+		}
 		strcpy(approvals[number_of_approvals], line);
 		number_of_approvals++;
 	}
 
 	fclose(approvalsFile);
 
-	valability = atoi(argv[4]);
+	FILE* ttlFile = fopen(argv[4], "r");
+	if (!ttlFile) {
+		fprintf(stderr, "Error opening file %s.\n", argv[3]);
+		return -1;
+	}
+
+	read = getline(&line, &len, clientsFile);
+	if (read == -1) {
+		fprintf(stderr, "Error reading file %s.\n", argv[1]);
+		return -1;
+	}
+
+	valability = atoi(line);
 	return 0;
 }
 

@@ -34,6 +34,8 @@ xdr_req_refresh_token_resp (XDR *xdrs, req_refresh_token_resp *objp)
 
 	 if (!xdr_string (xdrs, &objp->token, ~0))
 		 return FALSE;
+	 if (!xdr_string (xdrs, &objp->refresh_token, ~0))
+		 return FALSE;
 	return TRUE;
 }
 
@@ -74,8 +76,6 @@ xdr_validate_action_req_struct (XDR *xdrs, validate_action_req_struct *objp)
 {
 	register int32_t *buf;
 
-	 if (!xdr_string (xdrs, &objp->client_id, ~0))
-		 return FALSE;
 	 if (!xdr_string (xdrs, &objp->access_token, ~0))
 		 return FALSE;
 	 if (!xdr_string (xdrs, &objp->operation_type, ~0))

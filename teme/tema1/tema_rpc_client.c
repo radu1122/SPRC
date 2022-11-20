@@ -20,10 +20,11 @@ struct access_token_struct access_tokens[1024];
 
 char **split_string(char *string) {
 	char **result = malloc(1024 * sizeof(char *));
-	char *token = strtok(string, ",");
+	memset(result, 0, 1024 * sizeof(char *));
+	char *token = strtok(strdup(string), ",");
 	int i = 0;
 	while (token != NULL) {
-		result[i] = token;
+		result[i] = strdup(token);
 		token = strtok(NULL, ",");
 		i++;
 	}
@@ -35,12 +36,12 @@ int main(int argc, char const *argv[])
 {
 	CLIENT *handle;
 
-	if (argc != 2) {
-		fprintf(stderr, "./client <fisier operatii>\n");
+	if (argc != 3) {
+		fprintf(stderr, "./client <server address> <fisier operatii>\n");
 		return -1;
 	}
 
-	handle = clnt_create("localhost", AUTH_PROG, AUTH_VERS, PROTOCOL);
+	handle = clnt_create(argv[1], AUTH_PROG, AUTH_VERS, PROTOCOL);
 	if (!handle) {
 		perror("Failed to create client handle");
 		clnt_pcreateerror(argv[0]);
@@ -49,10 +50,10 @@ int main(int argc, char const *argv[])
 
 
 	// get data from file name argv[1]
-	FILE *operations_file = fopen(argv[1], "r");
+	FILE *operations_file = fopen(argv[2], "r");
 
 	if (!operations_file) {
-		fprintf(stderr, "Error opening file %s.\n", argv[1]);
+		fprintf(stderr, "Error opening file %s.\n", argv[2]);
 		return -1;
 	}
 
@@ -103,7 +104,12 @@ int main(int argc, char const *argv[])
 						access_tokens[access_tokens_count].access_token = res->access_token;
 						access_tokens[access_tokens_count].refresh_token = res->refresh_token;
 						access_tokens[access_tokens_count].valability = res->valability;
-						printf("%s -> %s\n", result->token, res->access_token);
+						access_tokens_count++;
+						if (strcmp(res->refresh_token, "") == 0) {
+							printf("%s -> %s\n", result->token, res->access_token);
+						} else {
+							printf("%s -> %s,%s\n", result->token, res->access_token, res->refresh_token);
+						}
 					}
 				// } else {
 				// 	printf("Permission denied\n");
@@ -114,28 +120,38 @@ int main(int argc, char const *argv[])
 			free(req);
 		} else {
 			// get access token of client tokens[0]
-			char *access_token = NULL;
-			char *refresh_token = NULL;
-			for (int i = 0; i < access_tokens_count; i++) {
+			char *access_token = strdup("NO_TOKEN");
+			char *refresh_token = strdup("NO_TOKEN");
+			for (int i = access_tokens_count - 1; i >= 0; i--) {
+				// print accestoken and client id
 				if (strcmp(access_tokens[i].client_id, tokens[0]) == 0) {
-					access_token = access_tokens[i].access_token;
-					refresh_token = access_tokens[i].refresh_token;
+					access_token = strdup(access_tokens[i].access_token);
+					refresh_token = strdup(access_tokens[i].refresh_token);
 					break;
 				}
 			}
 
+
 			// send req_validate_action_1
 			struct validate_action_req_struct *req = malloc(sizeof(struct validate_action_req_struct));
-			req->client_id = tokens[0];
-			req->access_token = access_token;
-			req->operation_type = tokens[1][0];
+			req->access_token = strdup(access_token);
+			req->operation_type = strdup(tokens[1]);
 			req->resource = tokens[2];
 
 			struct validate_action_res_struct * res = req_validate_action_1(req, handle);
 
-			if (strcmp(res->resp, "TOKEN_EXPIRED") == 0) {
-				struct req_refresh_token_resp *refresh_res = req_refresh_token_1(refresh_token, handle);
-				req->access_token = refresh_res->token;
+			if (strcmp(res->resp, "TOKEN_EXPIRED") == 0 && strcmp(refresh_token, "") != 0) {
+				struct req_refresh_token_resp *refresh_res = req_refresh_token_1(&refresh_token, handle);
+				req->access_token = strdup(refresh_res->token);
+
+				// update access token
+				for (int i = access_tokens_count - 1; i >= 0; i--) {
+					if (strcmp(access_tokens[i].client_id, tokens[0]) == 0) {
+						access_tokens[i].access_token = strdup(refresh_res->token);
+						access_tokens[i].refresh_token = strdup(refresh_res->refresh_token);
+						break;
+					}
+				}
 
 				res = req_validate_action_1(req, handle);
 			}

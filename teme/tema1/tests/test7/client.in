@@ -1,0 +1,16 @@
+74xaLqdTDdHZ9ey,REQUEST,0
+f80N46i82fdx61d,REQUEST,1
+f80N46i82fdx61d,READ,Applications
+f80N46i82fdx61d,EXECUTE,Applications
+f80N46i82fdx61d,DELETE,Applications
+74xaLqdTDdHZ9ey,READ,Preferences
+74xaLqdTDdHZ9ey,MODIFY,Preferences
+74xaLqdTDdHZ9ey,MODIFY,UserData
+74xaLqdTDdHZ9ey,REQUEST,0
+f80N46i82fdx61d,INSERT,Files
+f80N46i82fdx61d,INSERT,Applications
+f80N46i82fdx61d,REQUEST,1
+f80N46i82fdx61d,INSERT,Applications
+f80N46i82fdx61d,DELETE,Files
+f80N46i82fdx61d,EXECUTE,Applications
+f80N46i82fdx61d,11111,Applications

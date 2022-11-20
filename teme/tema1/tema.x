@@ -9,6 +9,7 @@ struct req_auth_resp {
 
 struct req_refresh_token_resp {
 	string token<>;
+	string refresh_token<>;
 };
 
 struct access_token_req_struct {
@@ -27,7 +28,6 @@ struct access_token_res_struct {
 };
 
 struct validate_action_req_struct {
-	string client_id<>;
 	string access_token<>;
 	string operation_type<>;
 	string resource<>;
