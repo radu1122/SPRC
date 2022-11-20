@@ -34,6 +34,7 @@ char **split_string(char *string) {
 
 int main(int argc, char const *argv[])
 {
+	setbuf(stdout, NULL);
 	CLIENT *handle;
 
 	if (argc != 3) {
@@ -63,10 +64,6 @@ int main(int argc, char const *argv[])
 
 	// while there are lines to read
 	while ((read = getline(&line, &len, operations_file)) != -1) {
-
-		// line[strlen(line) - 1] = '\0';
-
-		// printf("Line: %s", line);m
 		
 		// split into tokens
 		char ** tokens = split_string(line);
@@ -111,9 +108,6 @@ int main(int argc, char const *argv[])
 							printf("%s -> %s,%s\n", result->token, res->access_token, res->refresh_token);
 						}
 					}
-				// } else {
-				// 	printf("Permission denied\n");
-				// }
 
 				
 			}
@@ -162,16 +156,6 @@ int main(int argc, char const *argv[])
 
 		free(tokens);
 	}
-
-	// data.x = atoi(argv[2]);
-	// data.y = atoi(argv[3]);
-
-	// sum = get_sum_1(&data, handle);
-	// if (!sum) {
-	// 	perror("RPC failed");
-	// 	return -3;
-	// }
-	// printf("%d + %d = %d\n", data.x, data.y, *sum);
 
 	clnt_destroy(handle);
 

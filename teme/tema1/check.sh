@@ -63,7 +63,7 @@ if [[ $1 =~ $numberPattern ]]; then
 else
     for i in {1..7}
     do
-        SERVER_PARAMS="tests/test$i/userIDs.db tests/test$i/approvals.db tests/test$i/resources.db tests/test$i/token_ttl"
+        SERVER_PARAMS="tests/test$i/userIDs.db tests/test$i/resources.db tests/test$i/approvals.db tests/test$i/ttl"
         CLIENT_PARAMS="tests/test$i/client.in"
         ./$SERVER_NAME $SERVER_PARAMS > server.out &
         SERVER_PID=$!

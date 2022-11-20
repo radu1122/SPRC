@@ -3,7 +3,7 @@ CFLAGS += -g -I/usr/include/tirpc
 LDLIBS += -lnsl -ltirpc
 PROGRAM = tema
 SRC_SERVER = server.c tema_xdr.c
-SRC_CLIENT = tema_rpc_client.c tema_clnt.c tema_xdr.c 
+SRC_CLIENT = client.c tema_clnt.c tema_xdr.c 
 
 .PHONY: build clean
 
@@ -17,4 +17,4 @@ client: $(SRC_CLIENT)
 
 
 clean:
-	rm -f client server $(PROGRAM).h $(SRC_SERVER) $(SRC_CLIENT)
+	rm -f client server server.out client.out

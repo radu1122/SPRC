@@ -273,14 +273,14 @@ struct validate_action_res_struct * req_validate_action_1_svc(struct validate_ac
 				return &resp;
 			}
 
-
 			// split approvals by ,
 			char **tokens = split_approvals(approval);
-			int tokens_length = strlen(tokens);
+			int tokens_length = strlen((char *)tokens);
 
 
 			int op_permitted = 0;			
-			for (int j = 0; j < tokens_length; j += 2) {
+			int j = 0;
+			while (1) {
 				if (tokens[j] == NULL || tokens[j + 1] == NULL) {
 					break;
 				}
@@ -296,6 +296,7 @@ struct validate_action_res_struct * req_validate_action_1_svc(struct validate_ac
 						break;
 					}
 				}
+				j = j + 2;
 			}
 
 			if (op_permitted == 0) {
@@ -503,6 +504,7 @@ auth_prog_1(struct svc_req *rqstp, register SVCXPRT *transp)
 int
 main (int argc, char **argv)
 {
+	setbuf(stdout, NULL);
 	if (populate_db(argc, argv) == -1) {
 		return -1;
 	}
